@@ -1,6 +1,7 @@
 const userModel = require('../user/user');
 const chatModel = require('../chat/chat');
 const roomModel = require('../room/room');
+const groupModel = require('../group/group');
 
 const queryModule = {}
 
@@ -57,8 +58,8 @@ queryModule.uploadImage = async function(id,path){
 }
 
 /* Function for update self details  */
-queryModule.updateUserDetails = async function(data){
-    return await userModel.updateOne({_id:data.__id},req.body)
+queryModule.updateUserDetails = async function(id,data){
+    return await userModel.updateOne({_id:id},{$set:data})
 }
 
 /* Method for Update Password for user */
@@ -158,8 +159,8 @@ queryModule.unfriend = async function(data){
 }
 
 /* Method for block the user */
-queryModule.blockUser = async function(data){
-    return await roomModel.updateOne({_id:data._id},{$set:{Status:"Block", Sender_Id:data.Sender_Id}})
+queryModule.blockUser = async function(data, id, Action ){
+    return await roomModel.updateOne({_id:data._id},{$set:{Status:Action, Sender_Id:id}})
 }
 
 /* Method for getting Block list */
@@ -265,6 +266,49 @@ queryModule.getOnlyFriendList = async function(data){
 
         ]
     }).sort( { Created_At: -1 } )
+},
+
+/* Method for checking friend in the group */
+queryModule.checkFriendIsInGroup = async function(data){
+    return await groupModel.findOne({_id: data.GroupId},{Users: {$elemMatch: {User_Id:data.friendId}}})
 }
 
+queryModule.isAdmin = async function(data){
+    return await groupModel.findOne({_id: data.GroupId},{Users: {$elemMatch: {User_Id:data.myId, User_Type:"Admin"}}});
+}
+
+queryModule.addToGroup = async function(data){
+    return await groupModel.updateOne({_id:data.GroupId},{$addToSet : {Users: data.Users}})
+}
+
+queryModule.createGroup = async function(data){
+    return await groupModel(data).save();
+}
+
+queryModule.removeFromGroup = async function(data){
+    return await groupModel.updateOne({_id:data.GroupId, "Users._id":data.friendId},{$set : {"Users.$.User_Status":"Remove"}})
+}
+
+queryModule.getGroupDetails = async function(id){
+    return await groupModel.findOne({_id:id});
+}
+
+queryModule.getGroupList = async function(data){
+    return  await groupModel.find({Users: {$elemMatch: {User_Id :data, User_Status: {$ne : "Remove"}}}})
+}
+
+// queryModule.getGroupList = async function(data){
+//     console.log("data in group list query ::",data)
+//     return await groupModel.aggregate([
+//         // {Users: {$match: {$ne :{User_Status:"Remove"}}}},
+//         {$match: {"User_Id" :data}}
+//     ])
+// }
+
+
 module.exports = queryModule;
+
+
+/**
+
+ */

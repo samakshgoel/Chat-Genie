@@ -2,8 +2,6 @@ require('dotenv').config()
 const express = require('express');
 const app = express();
 const morgan = require('morgan')
-const roomModel = require('./model/room/room');
-const chatModel = require('./model/chat/chat');
 const socket = require('socket.io')
 var socketEvents = require('./socketEvents');
 app.use(express.json());
@@ -11,7 +9,6 @@ app.use(express.urlencoded({extended: true}));
 app.use(require('cors')())
 app.use(morgan('dev'))
 const mongoose = require('mongoose');
-const queryModule = require('./model/query/query');
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger.json');
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));

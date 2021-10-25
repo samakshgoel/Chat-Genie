@@ -4,7 +4,6 @@ const authorize = require('../../services/middleware');
 const roles = require('../../services/roles')
 const upload = require('../../services/uploadImage');
 const {userController,chatController,roomController, paymentController} = require('../../controller');
-const { Schema } = require('mongoose');
 
 ROUTE.post('/signup',userController.signup);
 ROUTE.put('/user-already-exist',userController.userAlreadyExist)
@@ -25,17 +24,16 @@ ROUTE.post('/upload-profile-image/:id',authorize(roles.User),upload.single('imag
 ROUTE.delete('/delete-message/:id',authorize(roles.User),chatController.deleteMessage)
 ROUTE.put('/update-message/:id',authorize(roles.User),chatController.updateMessage);
 ROUTE.put('/update-self-details',authorize(roles.User),userController.updateSelfDetails);
-ROUTE.put('/forget-password',authorize(roles.User),userController.forgetPassword);
-ROUTE.put('/reset-password/:token',userController.resetPassword);
-
-
-
-
+ROUTE.put('/forget-password',userController.forgetPassword);
+ROUTE.put('/reset-password',userController.resetPassword);
 ROUTE.post('/create-group',roomController.createGroup);
 ROUTE.post('/add-user-group',roomController.addUserToGroup);
 ROUTE.post('/remove-user-group',roomController.removeUserFromGroup);
 
-/***********---------Payments Method ----------********** */
+ROUTE.get('/get-all-chat-list',chatController.getAllChatList);
+ROUTE.get('/get-group-list',authorize(roles.User),chatController.getAllGroupList);
+
+/***********---------Payments Method ----------***********/
 ROUTE.post('/create-card-token',paymentController.createCardToken);
 ROUTE.post('/create-customer',paymentController.createCustomer);
 ROUTE.post('/update-customer',paymentController.updateCustomer);
@@ -43,4 +41,12 @@ ROUTE.post('/create-card',paymentController.createCard);
 ROUTE.post('/get-card',paymentController.getCard);
 ROUTE.post('/update-card',paymentController.updateCard)
 
+
+
+
+/*******for checking purpose  */
+ROUTE.post('/test',roomController.test);
 module.exports = ROUTE
+
+
+

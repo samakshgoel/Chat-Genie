@@ -12,6 +12,7 @@ const mongoose = require('mongoose');
 let UserSchema = new mongoose.Schema({
     User_Id : { type : String },
     User_Type: {type:String, default : "User"},
+    User_Name :{type:String},
     User_Status :{type:String, default:"Active"},
     createdAt: { type: Date, default : Date.now()},
     removedAt : {type:Date, default: null}
@@ -25,7 +26,10 @@ let groupChat = new mongoose.Schema(
     createdAt: { type: Date, default: Date.now },
     modifiedAt: { type: Date },
     Is_delete : {type: Boolean, default :false},
-    deletedAt: { type: Date }
+    createdAt : {type:Date,default:Date.now},
+    deletedAt: { type: Date },
+    ProfileImage : {type:String,default:null},
+    Group_Creater_Id : {type:String}
   });
-const model = mongoose.model('groupChat',groupChat);
+const model = mongoose.model('group',groupChat);
 module.exports = model;

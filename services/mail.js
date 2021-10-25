@@ -8,6 +8,7 @@ module.exports = async (to_email, subject, text) => {
     subject:subject,
     text: text   
     };
+    console.log("Message is ::::",message);
     sgMail.send(message);
 
 };

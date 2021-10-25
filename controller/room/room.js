@@ -1,5 +1,5 @@
 const queryModule = require('../../model/query/query');
-const groupModel = require('../../model/groupChat/groupChat');
+const groupModel = require('../../model/group/group');
 
 module.exports = {
 
@@ -38,6 +38,7 @@ module.exports = {
                 data = JSON.parse(JSON.stringify(data))
                 data.First_Name = req.user.First_Name;
                 data.Last_Name = req.user.Last_Name;
+                console.log("my data ::::",data)
                 return res.status(200).send({code:200,status:'successs',data:data})
             }else if(friendshipExist.Status === "Add"){
                 await queryModule.updateAddFriend(friendshipExist._id,req.user._id)
@@ -97,7 +98,7 @@ module.exports = {
     async acceptFriend(req,res){
         let id = req.body.id;
         let accepted = req.body.accepted;
-        console.log("Accepted" ,req.body.accepted)
+        console.log("Accepted" ,req.body)
        try{        
             let userData = await queryModule.getUser({Email:req.user.Email});
             console.log("userData",userData)
@@ -112,7 +113,8 @@ module.exports = {
                     await queryModule.acceptFriendRquest(friendsRqst._id, "Friend")
             
                 }else{
-                    await queryModule.acceptFriendRquest(friendsRqst._id, "Friend")
+                    await queryModule.acceptFriendRquest(friendsRqst._id, "Friend");
+
                 }
             }
             else{
@@ -231,11 +233,6 @@ module.exports = {
     },
 
 
-
-
-
-
-
     async createGroup(req,res){
 
         myUserId = req.body.UserId;
@@ -309,5 +306,20 @@ module.exports = {
             return res.status(422).send({code:422,status:'failed',msg:err.message});
         }
 
+    },
+
+    async test(req,res){
+        id = req.body.id;
+        ig = req.body.ig;
+        console.log("ig", ig , "iiiii ",id)
+        try{
+            let is = await groupModel.find({Users: {$elemMatch: {User_Id :id, User_Status: {$ne : "Remove"}}}})
+        console.log("test chal rha hai kya ",is);
+        return res.send(is)
+        }catch(err){
+            console.log(err)
+            res.send(err)
+        }
     }
+
 }
