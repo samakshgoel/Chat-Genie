@@ -10,10 +10,9 @@ const mongoose = require('mongoose');
 
 // userschema in group
 let UserSchema = new mongoose.Schema({
-    User_Id : { type : String },
+    User_Id : { type : mongoose.Schema.ObjectId,required: true },
     User_Type: {type:String, default : "User"},
-    User_Name :{type:String},
-    User_Status :{type:String, default:"Active"},
+    Is_Remove :{type:Boolean, default:false},
     createdAt: { type: Date, default : Date.now()},
     removedAt : {type:Date, default: null}
 })

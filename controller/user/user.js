@@ -91,7 +91,7 @@ module.exports = {
                     roles: 'User'
                 }
                 let token = jwt.sign(payload,process.env.JWT_Key, { expiresIn: "24h" })
-                console.log("tokennnn",token)
+                // console.log("tokennnn",token)
                 res.status(200).send({code:200, status:"success",token:token})
             }catch(err){
                 return res.status(422).send({ code:422, status: 'Failed' , msg : err.message})

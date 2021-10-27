@@ -1,5 +1,7 @@
 const queryModule = require('../../model/query/query');
 const groupModel = require('../../model/group/group');
+// const ObjectID  = require('mongodb').ObjectID;
+const { ObjectId } = require('bson');
 
 module.exports = {
 
@@ -309,12 +311,61 @@ module.exports = {
     },
 
     async test(req,res){
-        id = req.body.id;
-        ig = req.body.ig;
-        console.log("ig", ig , "iiiii ",id)
+        console.log("heyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy")
+        let data = req.body.User_Id
+        data = ObjectId(data);
+        console.log("data in test API", data)
         try{
-            let is = await groupModel.find({Users: {$elemMatch: {User_Id :id, User_Status: {$ne : "Remove"}}}})
-        console.log("test chal rha hai kya ",is);
+
+            let is = await groupModel.aggregate([
+                {
+                    $match:{$and:[
+                        {'Users.User_Id' :data },
+                        {'Users.Is_Remove':false}
+                    ]}
+                        
+                },
+                {
+                    $unwind: '$Users'
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'Users.User_Id',
+                        foreignField: '_id',
+                        as: 'data'
+                    }
+                },
+                {
+                    $unwind: '$data'
+                },
+                {$group:
+                    {
+                      _id:'$_id',
+                      "Group_Name":{ "$first": "$Group_Name" },
+                      'Is_delete':{'$first':"$Is_delete"},
+                      'Group_Creater_Id':{'$first':"$Is_delete"},
+                      'createdAt':{'$first':"$createdAt"},
+                      "ProfileImage":{'$first':"$ProfileImage"},
+                      'Users':{
+                          $push:{
+                            "User_Id":"$Users.User_Id",
+                            'myId':'$data._id',
+                            'Is_Remove':'$Users.Is_Remove',
+                            'User_Type':'$Users.User_Type',
+                            'First_Name': '$data.First_Name',
+                            'Last_Name': '$data.Last_Name',
+                            'createdAt':'$Users.createdAt',
+                            'removedAt':'$Users.removedAt',
+                            '_id':'$Users._id'  
+                          }
+                      }
+                  }
+                }
+            ])
+            
+            
+        // console.log("test chal rha hai kya ",is);
         return res.send(is)
         }catch(err){
             console.log(err)

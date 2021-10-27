@@ -2,6 +2,7 @@ const userModel = require('../user/user');
 const chatModel = require('../chat/chat');
 const roomModel = require('../room/room');
 const groupModel = require('../group/group');
+const groupchatModel = require('../groupchat/groupchat');
 
 const queryModule = {}
 
@@ -270,7 +271,7 @@ queryModule.getOnlyFriendList = async function(data){
 
 /* Method for checking friend in the group */
 queryModule.checkFriendIsInGroup = async function(data){
-    return await groupModel.findOne({_id: data.GroupId},{Users: {$elemMatch: {User_Id:data.friendId}}})
+    return await groupModel.findOne({_id: data.GroupId},{Users: {$elemMatch: {_id:data.friendId}}})
 }
 
 queryModule.isAdmin = async function(data){
@@ -286,7 +287,8 @@ queryModule.createGroup = async function(data){
 }
 
 queryModule.removeFromGroup = async function(data){
-    return await groupModel.updateOne({_id:data.GroupId, "Users._id":data.friendId},{$set : {"Users.$.User_Status":"Remove"}})
+    console.log("qury data is jere ", data)
+    return await groupModel.updateOne({_id:data.GroupId, "Users._id":data.friendId},{$set : {"Users.$.Is_Remove":true}})
 }
 
 queryModule.getGroupDetails = async function(id){
@@ -294,17 +296,68 @@ queryModule.getGroupDetails = async function(id){
 }
 
 queryModule.getGroupList = async function(data){
-    return  await groupModel.find({Users: {$elemMatch: {User_Id :data, User_Status: {$ne : "Remove"}}}})
+    console.log("data in query folder ",data)
+    return  await groupModel.aggregate([
+        {
+            $match:{$and:[
+                {'Users.User_Id' :data },
+                {'Users.Is_Remove':false}
+            ]}
+                
+        },
+        {
+            $unwind: '$Users'
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'Users.User_Id',
+                foreignField: '_id',
+                as: 'data'
+            }
+        },
+        {
+            $unwind: '$data'
+        },
+        {$group:
+            {
+              _id:'$_id',
+              "Group_Name":{ "$first": "$Group_Name" },
+              'Is_delete':{'$first':"$Is_delete"},
+              'Group_Creater_Id':{'$first':"$Is_delete"},
+              'createdAt':{'$first':"$createdAt"},
+              "ProfileImage":{'$first':"$ProfileImage"},
+              'Users':{
+                  $push:{
+                    "User_Id":"$Users.User_Id",
+                    'myId':'$data._id',
+                    'User_Status':'$Users.User_Status',
+                    'Is_Remove':'$Users.Is_Remove',
+                    'User_Type':'$Users.User_Type',
+                    'First_Name': '$data.First_Name',
+                    'Last_Name': '$data.Last_Name',
+                    'createdAt':'$Users.createdAt',
+                    'removedAt':'$Users.removedAt',
+                    '_id':'$Users._id'  
+                  }
+              }
+          }
+        }
+    ])
 }
 
-// queryModule.getGroupList = async function(data){
-//     console.log("data in group list query ::",data)
-//     return await groupModel.aggregate([
-//         // {Users: {$match: {$ne :{User_Status:"Remove"}}}},
-//         {$match: {"User_Id" :data}}
-//     ])
-// }
 
+queryModule.modifyGroupAdmin = async function(data){
+    return await groupModel.updateOne({_id:data.GroupId, "Users._id":data.friendId},{$set : {"Users.$.User_Type":data.action}})
+}
+
+queryModule.saveGroupChat = async function(data){
+    return await groupchatModel(data).save();
+}
+
+queryModule.isUser = async function(data){
+    return await groupModel.findOne({_id: data.Group_Id},{Users: {$elemMatch: {User_Id:data.User_Id, User_Status:"Active"}}});
+}
 
 module.exports = queryModule;
 

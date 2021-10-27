@@ -1,6 +1,6 @@
 const groupModel = require('../../model/group/group');
 const queryModule = require('../../model/query/query');
-
+const { ObjectId } = require('bson');
 module.exports = {
 
     /* Function for save the chat */
@@ -108,7 +108,7 @@ module.exports = {
             for(let i = 0; i <isInGroup.length; i++){
                 let haveChat = await queryModule.getLastMessage(isInGroup._id);
                 haveChat = JSON.parse(JSON.stringify(haveChat));
-                console.log("have chat in group:: ",haveChat);
+                // console.log("have chat in group:: ",haveChat);
                 if(haveChat){
                     isInGroup[i].LastMessage = haveChat.Message;
                     isInGroup[i].Last_Message = haveChat.Created_At;
@@ -127,23 +127,25 @@ module.exports = {
 
     /* Funtion for getting all group list */
     async getAllGroupList(req,res){
-        id = req.user._id;
-        id = JSON.parse(JSON.stringify(id))
-        console.log("id",id)
+        console.log("heyeyeyey")
+        let id = req.user._id;
+        id = ObjectId(id);
+        console.log("id in group list:::",id)
         if(!id) return res.status(422).send({code:422,status:'failed',msg:'Id is required.'})
 
         try{
             let isInGroup = await queryModule.getGroupList(id)
+            console.log("isInGroup in group list:::",isInGroup)
             isInGroup = JSON.parse(JSON.stringify(isInGroup));
             for(let i = 0; i <isInGroup.length; i++){
                 let haveChat = await queryModule.getLastMessage(isInGroup._id);
                 haveChat = JSON.parse(JSON.stringify(haveChat));
-                console.log("have chat in group:: ",haveChat);
+                // console.log("have chat in group:: ",haveChat);
                 if(haveChat){
                     isInGroup[i].LastMessage = haveChat.Message;
                     isInGroup[i].Last_Message = haveChat.Created_At;
                 }
-                console.log("My Group List is :", isInGroup);
+                // console.log("My Group List is :", isInGroup);
                 return res.status(200).send({code:200,status:'success',data:isInGroup});
             }
         }catch(err){

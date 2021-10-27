@@ -17,10 +17,7 @@ exports = module.exports = function(io){
     socket.on('joinRoom', (Data) => {
       console.log("DATA join here",Data)
       socket.join(Data.Room_Id);
-      onlineUserList.push(Data.Room_Id);
-      for(let i= 0 ; i<onlineUserList.length;i++){
-        io.to(onlineUserList[i]).emit("onlineResponse",onlineUserList);
-      }
+      
     });
   
     /* Method For Accept Friend */
@@ -94,19 +91,33 @@ exports = module.exports = function(io){
     })
   
     /* Method for giving Active Status*/  
-    // socket.on('online',(data)=>{
-    //   console.log("List of online user at present :", onlineUserList);
-    //   for(let i= 0 ; i<onlineUserList.length;i++){
-    //     io.to(onlineUserList[i]).emit("onlineResponse","Online");
-    //   }
-    // })
+    socket.on('online',(data)=>{
+      console.log("List of online user at present :", onlineUserList);
+      let myIndex = onlineUserList.indexOf(data.UserId);
+      if(myIndex == -1){
+        onlineUserList.push(data.UserId);
+        
+      }
+      for(let i= 0 ; i<onlineUserList.length;i++){
+        console.log(onlineUserList[i])
+        io.to(onlineUserList[i]).emit("onlineResponse",onlineUserList);
+      }
+    })
 
     /* Method for giving Unactive Status */
-    // socket.on("offline",(data)=>{
-    //   for(let i= 0 ; i<onlineUserList.length;i++){
-    //     io.to(onlineUserList[i]).emit("offlineResponse","Offline");
-    //   }
-    // })
+    socket.on("offline",(data)=>{
+      console.log("heyyyyyyyyyyyyyyyyy i am offline")
+      let myIndex = onlineUserList.indexOf(data.UserId);
+      console.log("Data in offline socket:::::::::::::::::::", data)
+      if (myIndex !== -1) {
+        onlineUserList.splice(myIndex, 1);
+      }
+      console.log("Users in online array after going offline : ",onlineUserList)
+      for(let i= 0 ; i<onlineUserList.length;i++){
+        console.log("Users in online array after going offline2 : ",onlineUserList)
+        io.to(onlineUserList[i]).emit("offlineResponse",onlineUserList);
+      }
+    })
 
     /*Method for Showing Typing in chat*/
     socket.on('typing',(data)=>{
@@ -148,9 +159,9 @@ exports = module.exports = function(io){
     })
   
     /* Method for leaving Socket Room */
-    socket.on('leave', Room_Id => {
-      socket.leave(Room_Id);
-      console.log('left ' , Room_Id);
+    socket.on('leave', user => {
+      socket.leave(user.Room_Id);
+      console.log('left ' , user.Room_Id);
     });
   
 
@@ -177,13 +188,7 @@ exports = module.exports = function(io){
 
     /* Method For Disconnecting Socket */
     socket.on('disconnect', function (data) {
-      var myIndex = onlineUserList.indexOf(data);
-      if (myIndex !== -1) {
-        onlineUserList.splice(myIndex, 1);
-      }
-      for(let i= 0 ; i<onlineUserList.length;i++){
-        io.to(onlineUserList[i]).emit("offlineResponse",onlineUserList);
-      }
+      socket.leave(data.UserId);
     });
 
 
@@ -196,7 +201,6 @@ exports = module.exports = function(io){
       AdminDetails = {
         User_Id: Data.myUserId,
         User_Type:"Admin",
-        User_Name : Data.User_Name
       }
 
       Data.Users.push(AdminDetails);
@@ -211,7 +215,7 @@ exports = module.exports = function(io){
       // console.log("creating group successfulll",data);
         for (let i = 0 ; i<data.Users.length; i++){
           console.log("Data.Users[i].User_Id::::::",Data.Users[i].User_Id)
-          io.to(data.Users[i].User_Id).emit('createGroupResponse',data);
+          io.to(Data.Users[i].User_Id).emit('createGroupResponse',data);
           console.log(i," emit done ")
         }
       
@@ -222,15 +226,20 @@ exports = module.exports = function(io){
 
     /* Method for adding friend in the group */
     socket.on('addFriendToGroup',data=>{
-      console.log("Data in adding friend to group :", data.myId, data.Users , data.GroupId);
-
+      console.log("Datat in add friend in socket ", data)
       queryModule.isAdmin(data).then(haveAccess=>{
         if(haveAccess){
           queryModule.addToGroup(data).then(addFriend=>{
             if(addFriend.modifiedCount==1){
-              for(let i = 0 ; i<data.Users.length; i++){
-                io.to(data.Users[i].User_Id).to(data.myId).emit('addFriendToGroupResponse',data);
-              }
+              queryModule.getGroupDetails(data.GroupId).then(myResponse=>{
+                myResponse = JSON.parse(JSON.stringify(myResponse));
+                console.log("Data in adding friend to group :", myResponse);
+                  for(let i = 0 ; i<myResponse.Users.length; i++){
+                    io.to(myResponse.Users[i].User_Id).emit('addFriendToGroupResponse',data);
+                    console.log("data.Users[i].UserId::", myResponse.Users[i].User_Id )
+                  }
+              })
+
             }else{
               io.to(data.myId).emit('addFriendToGroupResponse',"Something Went Wrong!!!");
             }
@@ -250,13 +259,20 @@ exports = module.exports = function(io){
         if(response.Group_Creater_Id != data.friendId){
           queryModule.isAdmin(data).then(haveAccess=>{
             if(haveAccess){
+              console.log("IS Admin")
               queryModule.checkFriendIsInGroup(data).then(isMember=>{
+                console.log("ISmember:::", isMember)
                 if(isMember.Users.length!=0){
                   queryModule.removeFromGroup(data).then(removeFriend=>{
+                    console.log("remve friend d djed wejd::",removeFriend)
                     if(removeFriend.modifiedCount==1){
-                      io.to(data.friendId).to(data.myId).emit('removeFriendFromGroupResponse',data);
+
+                      for(let i = 0 ; i<response.Users.length; i++){
+                        io.to(response.Users[i].User_Id).to(data.friendId).emit('removeFriendFromGroupResponse',data);
+                        console.log("data.Users[i].UserId::", response.Users[i].User_Id )
+                      }
                     }else{
-                      io.to(data.myId).emit('removeFriendFromGroupResponse',"Something Went Wrong!!!");
+                      io.to(data.myId).emit('removeFriendFromGroupResponse',"Something Went Wrong1!!!");
                     }
                   })
                 }
@@ -282,6 +298,62 @@ exports = module.exports = function(io){
         }
       }).catch(err=>{console.log("error in exist from group 1", err)})
 
+
+    })
+
+    socket.on('makeAdmin',data=>{
+      console.log("data in make admin ", data);
+      queryModule.isAdmin(data).then(response=>{
+        if(response.Users[0].User_Type == "Admin"){
+          queryModule.modifyGroupAdmin(data).then(nowAdmin=>{
+            if(nowAdmin.modifiedCount == 1){
+              io.to(data.myId).to(data.friendId).emit("makeAdminResponse","Now Admin");
+            }else{
+              io.to(data.myId).emit("makeAdminResponse","Something went wrong!!")
+            }
+          }).catch(err=>{console.log("Error in making admin 2 ",err)})
+
+        }else{
+          io.to(data.myId).emit("makeAdminResponse","You are not authorised")
+        }
+      }).catch(err=>{console.log("error in making admin 1 ",err)});
+    })
+
+    socket.on('removeAdmin',data=>{
+      console.log("data in removing admin ", data);
+      queryModule.isAdmin(data).then(response=>{
+        if(response.Users[0].User_Type == "Admin"){
+          queryModule.modifyGroupAdmin(data).then(removeAdmin=>{
+            if(removeAdmin.modifiedCount == 1){
+              io.to(data.myId).to(data.friendId).emit("removeAdminResponse","Remove From Admin");
+            }else{
+              io.to(data.myId).emit("removeAdminResponse","Something went wrong!!")
+            }
+          })
+        }else{
+          io.to(data.myId).emit("removeAdminResponse","You are not authorised")
+        }
+
+      })
+    })
+
+    socket.on('groupChat',data=>{
+      console.log("data in group chat socket ", data);
+      queryModule.isUser(data).then(isUser=>{
+        if(isUser.Users.length != 0){
+          queryModule.getUser({_id :isUser.Users[0].User_Id}).then(UserDetails=>{
+            UserDetails = JSON.parse(JSON.stringify(UserDetails));
+            queryModule.saveGroupChat(data).then(chat=>{
+              chat.User_Name = UserDetails.First_Name + " " + UserDetails.Last_Name;
+              if(chat){
+                io.to(data.Group_Id).emit("groupChatResponse",chat)
+              }
+            }).catch(err=>{console.log("error in group chat 1 ",err)})
+          }).catch(err=>{console.log("error in group chat 2 ",err)})
+      }else{
+        io.to(data.User_Id).emit("groupChatResponse","You are not authorized!")
+      }
+      }).catch(err=>{console.log("error in group chat 1 ",err)})
 
     })
 
