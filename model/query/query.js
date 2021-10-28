@@ -271,7 +271,7 @@ queryModule.getOnlyFriendList = async function(data){
 
 /* Method for checking friend in the group */
 queryModule.checkFriendIsInGroup = async function(data){
-    return await groupModel.findOne({_id: data.GroupId},{Users: {$elemMatch: {_id:data.friendId}}})
+    return await groupModel.findOne({_id: data.GroupId},{Users: {$elemMatch: {User_Id:data.friendId}}})
 }
 
 queryModule.isAdmin = async function(data){
@@ -288,7 +288,7 @@ queryModule.createGroup = async function(data){
 
 queryModule.removeFromGroup = async function(data){
     console.log("qury data is jere ", data)
-    return await groupModel.updateOne({_id:data.GroupId, "Users._id":data.friendId},{$set : {"Users.$.Is_Remove":true}})
+    return await groupModel.updateOne({_id:data.GroupId, "Users.User_Id":data.friendId},{$set : {"Users.$.Is_Remove":true}})
 }
 
 queryModule.getGroupDetails = async function(id){

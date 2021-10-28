@@ -3,6 +3,7 @@ const roomModel = require('./model/room/room');
 const chatModel = require('./model/chat/chat');
 const queryModule = require('./model/query/query');
 const io = require('./index')
+const { ObjectId } = require('bson');
 
 
 exports = module.exports = function(io){
@@ -88,6 +89,14 @@ exports = module.exports = function(io){
         let id= Data.data.Sender_Id !== Data.data.From_user? Data.data.From_user: Data.data.To_user
         Data.data.Status = "Requested"
         io.to(id).emit('addFriendResponse', Data);
+        // let msg = {
+        //   User_Id:Data.data.Sender_Id,
+        //   Room_Id:Data.data._id,
+        //   Message:Data.data.LastMessage
+        // }
+        // chatModel(msg).save().then(data=>{
+        //   console.log("Data of last message after sending request ",data);
+        // })
     })
   
     /* Method for giving Active Status*/  
@@ -260,6 +269,7 @@ exports = module.exports = function(io){
           queryModule.isAdmin(data).then(haveAccess=>{
             if(haveAccess){
               console.log("IS Admin")
+              data.friendId = ObjectId(data.friendId);
               queryModule.checkFriendIsInGroup(data).then(isMember=>{
                 console.log("ISmember:::", isMember)
                 if(isMember.Users.length!=0){
@@ -287,14 +297,22 @@ exports = module.exports = function(io){
 
     socket.on('exitFromGroup',data=>{
       console.log("Data in exist from  Group : ", data);
+      data.friendId = ObjectId(data.friendId);
 
       queryModule.checkFriendIsInGroup(data).then(isMember =>{
         if(isMember.Users.length !=0){
           queryModule.removeFromGroup(data).then(removedUser=>{
             if(removedUser.modifiedCount==1){
-              io.to(data.friendId).emit('exitFromGroupResponse',data);
+              io.to(data.GroupId).emit('exitFromGroupResponse',data);
+              console.log("while exiting from group group is ", data.GroupId)
+            }else{
+              console.log("ooooooooooooooooooooooooooooooooooo")
+              io.to(data.GroupId).emit('exitFromGroupResponse',"Can't remove");
             }
           }).catch(err=>{console.log("error in exist from group 2", err)})
+        }else{
+          console.log("yyyyyyyyyyyyyyyyyyyyyy")
+          io.to(data.GroupId).emit('exitFromGroupResponse',"Not a member");
         }
       }).catch(err=>{console.log("error in exist from group 1", err)})
 
