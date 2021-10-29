@@ -7,10 +7,10 @@ let Is_Seen = new mongoose.Schema({
 const groupChat= new mongoose.Schema({
 
 	Message: {type: String},
-	User_Id:[Is_Seen],
-	Group_Id :{type:String},
+	User_Id:{type : mongoose.Schema.ObjectId},
+	Group_Id :{type:mongoose.Schema.ObjectId,required: true },
 	Deleted : {type:Boolean, default:false},
-	Is_Seen :{type:Boolean,default:false},
+	Is_Seen :[Is_Seen],
 	Created_At : {type: Date, default: Date.now()},
     Updated_At : {type : Date , default :Date.now()},
     Deleted_At : {type: Date, default : null}

@@ -45,7 +45,7 @@ ROUTE.post('/update-card',paymentController.updateCard)
 
 
 /*******for checking purpose  */
-ROUTE.post('/test',roomController.test2);
+ROUTE.post('/test',roomController.test4);
 module.exports = ROUTE
 
 

@@ -207,7 +207,7 @@ module.exports = {
                     arr.push(list[i])
                 }
             }
-        return res.status(200).send({code:200,status:'successs',data:arr})    
+        return res.status(200).send({code:200,status:'successs',data:arr,skip:req.body.skip})    
         }catch(err){
             console.log("error:::",err)
             return res.status(422).send({code:422,status:'failed',data:err})
