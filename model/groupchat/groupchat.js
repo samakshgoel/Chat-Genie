@@ -1,12 +1,13 @@
 const mongoose = require('mongoose');
 
 let Is_Seen = new mongoose.Schema({
-    User_Id : { type : mongoose.Schema.ObjectId,required: true }
+    User_Id : { type : mongoose.Schema.ObjectId}
 })
 
 const groupChat= new mongoose.Schema({
 
 	Message: {type: String},
+	Message_Type : {type:String,default:'Text'},
 	User_Id:{type : mongoose.Schema.ObjectId},
 	Group_Id :{type:mongoose.Schema.ObjectId,required: true },
 	Deleted : {type:Boolean, default:false},

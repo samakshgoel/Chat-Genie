@@ -86,38 +86,18 @@ module.exports = {
 
     /* Funtion for getting all chat list */
     async getAllChatList(req,res){
-       id = req.body.id;
-       let myChatList = [];
+       let id = req.user._id;
+       id = JSON.parse(JSON.stringify(id));
+       console.log("oidddd",id)
        try{
-            let getFriends = await queryModule.getOnlyFriendList(id);
-            getFriends = JSON.parse(JSON.stringify(getFriends));
-            // console.log("getFriends list : ",getFriends)
 
-            for(let i=0 ; i<getFriends.length; i++){
-                const haveChat = await queryModule.getLastMessage(getFriends[i]._id);
-                if(haveChat){
-                    let friendId = id === getFriends[i].To_user ? getFriends[i].From_user : getFriends[i].To_user;
-                    let friendDetail = await queryModule.getUser({_id:friendId});
-                    getFriends[i].Group_Name = friendDetail.First_Name +" "+ friendDetail.Last_Name ;
-                    getFriends[i].LastMessage = haveChat.Message;
-                    myChatList.push(getFriends[i]);
-                }
-            }
-            let isInGroup = await groupModel.find({Users: {$elemMatch: {User_Id:id}}})
-            isInGroup = JSON.parse(JSON.stringify(isInGroup));
-            for(let i = 0; i <isInGroup.length; i++){
-                let haveChat = await queryModule.getLastMessage(isInGroup._id);
-                haveChat = JSON.parse(JSON.stringify(haveChat));
-                // console.log("have chat in group:: ",haveChat);
-                if(haveChat){
-                    isInGroup[i].LastMessage = haveChat.Message;
-                    isInGroup[i].Last_Message = haveChat.Created_At;
-                    myChatList.push(isInGroup[i])
-                }
-            }
-            console.log("My Chat List is :", myChatList);
-            return res.status(200).send({code:200,status:'success',data:myChatList});
-
+           freindList = await queryModule.getFriendChatList(id);
+           console.log("freindList freindListfreindList",freindList)
+           groupList = await queryModule.getGroupChatList(id);
+           console.log("groupListgroupListgroupList : ",groupList)
+           const result = [...freindList,...groupList]
+           result.sort(function(a,b){return b.Last_Message_Time - a.Last_Message_Time})
+           return res.status(200).send({code:200,status:'success',data:result});
 
        }catch(err){
            console.log("error in get all chat list: ",err);
@@ -132,26 +112,67 @@ module.exports = {
         id = ObjectId(id);
         console.log("id in group list:::",id)
         if(!id) return res.status(422).send({code:422,status:'failed',msg:'Id is required.'})
+        let group = []
 
         try{
             let isInGroup = await queryModule.getGroupList(id)
-            console.log("isInGroup in group list:::",isInGroup)
+            console.log("Testttt",isInGroup)
+            // console.log("isInGroup in group list:::",isInGroup)
             isInGroup = JSON.parse(JSON.stringify(isInGroup));
             for(let i = 0; i <isInGroup.length; i++){
-                let haveChat = await queryModule.getLastMessage(isInGroup._id);
-                haveChat = JSON.parse(JSON.stringify(haveChat));
-                // console.log("have chat in group:: ",haveChat);
-                if(haveChat){
-                    isInGroup[i].LastMessage = haveChat.Message;
-                    isInGroup[i].Last_Message = haveChat.Created_At;
+                for(let j = 0 ; j <isInGroup[i].Users.length;j++){
+                    if(!isInGroup[i].Users[j].Is_Remove && isInGroup[i].Users[j].User_Id==req.user._id){
+                        console.log(isInGroup[i].Users[j].Is_Remove , isInGroup[i].Users[j].User_Id, isInGroup[i].Users[j]._id,isInGroup[i]._id)
+                        
+                        // console.log("Yes i am in" ,group)
+                        group.push(isInGroup[i])
+                    }
                 }
-                // console.log("My Group List is :", isInGroup);
-                return res.status(200).send({code:200,status:'success',data:isInGroup});
+                            
             }
+            
+            return res.status(200).send({code:200,status:'success',data:group});
         }catch(err){
             console.log("error in group :",err)
             return res.status(422).send({code:422,status:'failed',msg:err.message});
         }
 
+    },
+
+     /* Funtion for updating group message */
+    async updateGroupMessage(req,res){
+        let data = req.body;
+        if(!data) return res.send("Data is required.")
+        try{
+            let isSender = await queryModule.isMsgSender(data);
+            console.log("IsSender :::", isSender);
+            if(!isSender) return res.status(422).send({code:422,status:'failed',response: "Not Unauthorized"});
+            let updateMessage = await queryModule.updateGroupMessage(data)
+            updateMessage.Message = data.msg;
+            console.log("Update message :", updateMessage);
+            return res.status(200).send({code:200,status:'success',response:updateMessage});
+
+        }catch(err){
+            console.log(err);
+            return res.status(422).send({code:422,status:'failed',response:err.message});
+        }
+    },
+
+    async getGroupChat(req,res){
+        let data = req.body;
+        data.User_Id = req.user._id;
+        // id = ObjectId(id);
+        console.log("req.bodyreq.bodyreq.body",req.body)
+        if(!data.User_Id) return res.status(422).send({code:422,status:'failed',msg:'Id is required'})
+
+        try{
+            let isInGroup = await queryModule.isUser(data)
+            if(isInGroup.Users.length ==0) return res.status(422).send({code:422,status:'failed',msg:'You are not authorized'});
+            let chats = await queryModule.getGroupChat(data.Group_Id);
+            return res.status(200).send({code:200,status:'success',msg:chats});
+        }catch(err){
+            console.log(err);
+            return res.status(422).send({code:422,status:'failed',msg:err.message});
+        }
     }
 }

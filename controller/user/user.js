@@ -236,12 +236,15 @@ module.exports = {
         try{
             let userData = await queryModule.getUser({_id:id})
             userData = JSON.parse(JSON.stringify(userData))
-        
-            let myImagePath = userData.ProfileImage;
-            let buff = fs.readFileSync(myImagePath);
-            let base64data = buff.toString('base64');
-
-            return res.status(200).send({code:200,status:'successs',data:base64data})     
+            if(userData.ProfileImage){
+                let myImagePath = userData.ProfileImage;
+                let buff = fs.readFileSync(myImagePath);
+                let base64data = buff.toString('base64');
+    
+                return res.status(200).send({code:200,status:'successs',data:base64data})
+            }else{
+                return res.status(200).send({code:200,status:'successs',data:''})
+            }
         }catch(err){
             console.log(err)
             return res.status(422).send({code:422,status:"failed",msg :err.message});

@@ -81,7 +81,9 @@ module.exports = {
                 const friendData = await queryModule.getUser({_id:id})
                 friendshipExist[i].First_Name = friendData.First_Name;
                 friendshipExist[i].Last_Name = friendData.Last_Name;
-                friendshipExist[i].Email = friendData.Email; 
+                friendshipExist[i].Email = friendData.Email;
+                friendshipExist[i].Gender = friendData.Gender
+                friendshipExist[i].ProfileImage = friendData.ProfileImage
                 if(friendshipExist[i].Sender_Id===userData._id){
                     if(friendshipExist[i].Status === "Requested"){
                         friendshipExist[i].Status = "Pending"
@@ -194,25 +196,11 @@ module.exports = {
 
     /* Function for getting Block List */
     async getBlockList(req,res){  
-        try{
-            myData = await queryModule.getUser({_id:req.user._id});
-            myData = JSON.parse(JSON.stringify(myData))
-            let blockList = await queryModule.getBlockList(req.user._id)
-            blockList = JSON.parse(JSON.stringify(blockList))
-            console.log("Block list",blockList)
-            for(let i = 0; i<blockList.length;i++){
-                if(myData._id===blockList[i].To_user){
-                    let userData = await queryModule.getUser({_id:blockList[i].From_user})
-                   
-                    blockList[i].First_Name = userData.First_Name;
-                    blockList[i].Last_Name = userData.Last_Name;
+        let User_Id = req.user._id;
+        User_Id = JSON.parse(JSON.stringify(User_Id));
 
-                }else{
-                    let userData = await queryModule.getUser({_id:blockList[i].To_user})
-                    blockList[i].First_Name = userData.First_Name;
-                    blockList[i].Last_Name = userData.Last_Name;
-                }
-            }
+        try{
+            let blockList = await queryModule.getBlockList(User_Id);
             return res.status(200).send({code:200,status:"success", data : blockList})
         }catch(err){
             console.log(err);
@@ -222,19 +210,10 @@ module.exports = {
 
     /* Function for getting the list of friends */
     async getfriendList(req,res){
+        let User_Id = req.user._id;
+        User_Id = JSON.parse(JSON.stringify(User_Id));
         try{
-
-            let myFriends = await queryModule.getOnlyFriendList(req.user._id);
-            req.user._id = JSON.parse(JSON.stringify(req.user._id))
-            myFriends = JSON.parse(JSON.stringify(myFriends));
-
-            for(let i = 0 ;i<myFriends.length;i++){
-                const id = req.user._id == myFriends[i].From_user ? myFriends[i].To_user : myFriends[i].From_user
-                const friendData = await queryModule.getUser({_id:id});
-                myFriends[i].First_Name = friendData.First_Name;
-                myFriends[i].Last_Name = friendData.Last_Name; 
-                myFriends[i].ProfileImage = friendData.ProfileImage;
-            }
+            let myFriends = await queryModule.getOnlyFriendList(User_Id);
             return res.status(200).send({code:200,status:"success",data:myFriends});
         }catch(err){
             console.log("error getfriendList API is :")
@@ -681,25 +660,23 @@ module.exports = {
                   }
                 },
 
-
-
-                // {
-                //     $lookup:{
-                //         from:'groupchat',
-                //         localField:'_id',
-                //         foreignField:'Group_Id',
-                //         as:'data2'
-                //     }
-                // },
-                // {unwind : '$data2'},
-                // {
-                //     $project:{
-                //         _id:1,
-                //         // Last_Message:'$data2.Message',
-                //         // Last_Message_Time:"$data2.Created_At",
-                //         // Last_Message_Seen:'$data2.Is_Seen',
-                //     }
-                // }
+                {
+                    $lookup:{
+                        from:'groupchat',
+                        localField:'_id',
+                        foreignField:'Group_Id',
+                        as:'data2'
+                    }
+                },
+                {unwind : '$data2'},
+                {
+                    $project:{
+                        _id:1,
+                        Last_Message:'$data2.Message',
+                        Last_Message_Time:"$data2.Created_At",
+                        Last_Message_Seen:'$data2.Is_Seen',
+                    }
+                }
                 
             ])
 
@@ -708,14 +685,15 @@ module.exports = {
             return res.status(422).send({code:422,status:'failed',data:iss})
         }catch(err){
             console.log(err)
+            return res.status(422).send({code:422,status:'failed',msg:err.message})
         } 
         
         
     },
 
     async test4(req,res){
-        data = req.body.User_Id;
-        console.log(data)
+        id = req.body.User_Id;
+        console.log(id)
         try{
             // let a = await userModel.aggregate([
             //     {$match:{'_id':ObjectId(data)}},
@@ -746,50 +724,252 @@ module.exports = {
             // ])
 
             let a = await userModel.aggregate([
-                {$match:{'_id':{$ne:ObjectId(data)}}},
                 {
-                    $project:{
-                        '_id':{'$toString':'$_id'},
-                        First_Name:1,
-                        Last_Name:1,
-                        'To_user':ObjectId(data)
+                    $match : {"_id":{$ne:ObjectId(id)}}
+                },
+                {
+                    $project : {
+                        '_id':{
+                        '$toString':'$_id'
+                    },
+                        
+                        First_Name :1,
+                        Last_Name :1,
+                    }
+                },
+
+                {
+                    $lookup :{
+                        from:"rooms",
+                        localField :"_id",
+                        foreignField:"To_user",
+                        as:"list_data"
                     }
                 },
                 {
-                    $lookup:{
-                        from:'rooms',
-                        localField:'_id',
-                        foreignField:'To_user',
-                        as:'data'
+                    $unwind:{
+                    path:'$list_data',
+                    preserveNullAndEmptyArrays: true
                     }
                 },
-                { $unwind: { path: "$data", preserveNullAndEmptyArrays: true } },
+                {
+                    $lookup :{
+                        from:"rooms",
+                        localField :"_id",
+                        foreignField:"From_user",
+                        as:"list_data2"
+                    }
+                },
+                {
+                    $unwind:{
+                        path:'$list_data2',
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
                 // {
-                //     $project:{
-                //         id:1,
-                //         First_Name:1,
-                //         Last_Name:1,
-                //         data:{
-                //             $cond: { if: { $eq: ['$data', {}] }, then: null, else: '$data' }
-                //         }
-                //         // From_user:'$data.From_user',
-                //         // data:"$data"
-                //     }
-                // }
-                // {
-                //     $lookup:{
-                //         from:'rooms',
-                //         localField:'_id',
-                //         foreignField:'From_user',
-                //         as:'data2'
-                //     }
+                // $match:{"list_data.status":{$ne:'Block'}}
                 // },
-                // {$unwind:'$data2'}
-            ])
+                {
+                    $project : {
+                        '_id':'$_id',
+                        First_Name :1,
+                        "data": {
+                            $cond : {
+                                if:{$eq:[id,'$list_data.From_user']},then:'$list_data',else:null
+                            }
+                        },
+                        "data2": {
+                            $cond : {
+                                if:{$eq:[id,'$list_data2.To_user']},then:'$list_data2',else:null
+                            }
+                        }
+                    }
+                }
+                
+                ])
             console.log(a.length)
             return res.send(a)
         }catch(err){
             console.log(err)
+        }
+    },
+
+    async test5(req,res){
+        let data = req.body.User_Id;
+        try{
+            // let friendList = await queryModule.getFriendChatList(data)
+            let friendList = await roomModel.aggregate([
+                
+            {
+                $match:{$and :
+                    [
+                        {
+                            $or : [
+                                {"To_user":data} , 
+                                {"From_user":data}
+                            ]
+                        },
+                        {
+                            "Status" :{$ne:"Block"}
+                        }
+                    ]
+                }
+                    
+            }
+            ,{
+                "$project":{
+                    "To_user":{
+                        $cond:{
+                            if:{$eq:['$From_user',data]},then:{"$toObjectId":"$To_user"},else:{"$toObjectId":"$From_user"}
+                        }
+                    },
+                    "_id":{
+                        "$toString":"$_id"
+                    },
+                    Status:1,
+                    Response_Time:1,
+                    Created_At:1,
+                    Is_Seen:1,
+                    Last_Message:1,
+                    Sender_Id:1
+                }
+            },
+            {
+                $lookup:{
+                    from:'users',
+                    localField:'To_user',
+                    foreignField:'_id',
+                    as:'To_user_details'
+                }
+            },
+            {
+                $unwind:"$To_user_details"
+            },
+            {
+                $lookup:{
+                    from:'chats',
+                    localField:'_id',
+                    foreignField:'Room_Id',
+                    as:'chat'
+                }
+            },
+            { $addFields: {
+                "chatDetails": { "$slice": ["$chat", -1] },
+              }
+            },
+            {$unwind:'$chatDetails'},
+            {
+                $project:{
+                    _id:1,
+                    To_user:1,
+                    From_user:1,
+                    Sender_Id:1,
+                    Response_Time:1,
+                    Created_At:1,
+                    Name:{
+                        $concat:['$To_user_details.First_Name'," ", "$To_user_details.Last_Name"]
+                    },
+                    Status :1,
+                    Last_Message:"$chatDetails.Message",
+                    Last_Message_Time: "$chatDetails.Created_At",
+                    Last_Message_Seen: "$chatDetails.Is_Seen"
+                    
+                }
+            },
+            ])
+            console.log(friendList.length)
+            let GroupList = await groupModel.aggregate([
+                {
+                    $match:{$and:[
+                        {'Users.User_Id' :ObjectId(data) },
+                        {'Users.Is_Remove':false}
+                    ]}
+                        
+                },     
+                {
+                    $unwind: '$Users'
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'Users.User_Id',
+                        foreignField: '_id',
+                        as: 'data'
+                    }
+                },
+                {
+                    $unwind: '$data'
+                },
+                {$group:
+                    {
+                      _id:'$_id',
+                      "Group_Name":{ "$first": "$Group_Name" },
+                      'Is_delete':{'$first':"$Is_delete"},
+                      'Group_Creater_Id':{'$first':"$Is_delete"},
+                      'createdAt':{'$first':"$createdAt"},
+                      "ProfileImage":{'$first':"$ProfileImage"},
+                      'Users':{
+                          $push:{
+                            "User_Id":"$Users.User_Id",
+                            'myId':'$data._id',
+                            'User_Status':'$Users.User_Status',
+                            'Is_Remove':'$Users.Is_Remove',
+                            'User_Type':'$Users.User_Type',
+                            'First_Name': '$data.First_Name',
+                            'Last_Name': '$data.Last_Name',
+                            'createdAt':'$Users.createdAt',
+                            'removedAt':'$Users.removedAt',
+                            '_id':'$Users._id'  
+                          }
+                      }
+                  }
+                },    
+                {
+                    $lookup:{
+                        from:'groupchats',
+                        localField:'_id',
+                        foreignField:'Group_Id',
+                        as:'data2'
+                    }
+                },
+                {$addFields:{
+                    'data4':{$slice:['$data2',-1]}
+                }},
+                {$unwind:'$data4'},
+                {
+                    $project:{
+                        _id:1,
+                        Users:1,
+                        Group_Name:1,
+                        ProfileImage:1,
+                        Last_Message:'$data4.Message',
+                        Last_Message_Time:"$data4.Created_At",
+                        Last_Message_Seen:'$data4.Is_Seen',
+                    }
+                }
+                
+            ]);
+            const result = [...friendList,...GroupList]
+            result.sort(function(a,b){return b.Last_Message_Time - a.Last_Message_Time})
+            return res.send(result)
+        }catch(err){
+            console.log(err);
+        }
+    },
+
+    async test6(req,res){
+        let data = req.body
+        // data = ObjectId(data);
+        // // data.User_Id = ObjectId(data.User_Id);
+        // console.log("datatatattta",data)
+
+        try{
+            let user = await chatModel(data).save()
+            console.log("hjvj,cgasyhcgvshcbjhcashcas",user)
+            return res.send(user);
+        }catch(err){
+            console.log(err);
+            return res.send(err.message)
         }
     }
 

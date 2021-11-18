@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const Chat= new mongoose.Schema({
 
 	Message: {type: String},
+	Message_Type : {type:String, default:'Text'},
 	User_Id:{type: String},
 	Room_Id :{type:String},
 	Deleted : {type:Boolean, default:false},

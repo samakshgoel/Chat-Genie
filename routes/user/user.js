@@ -19,7 +19,7 @@ ROUTE.post('/block/:roomId',authorize(roles.User),roomController.blockUser)
 ROUTE.post('/save-chat/:room_Id',authorize(roles.User), chatController.saveChat)
 ROUTE.get('/get-chat/:room_Id/:FriendId',authorize(roles.User),chatController.getChat)
 ROUTE.get('/get-block-list',authorize(roles.User),roomController.getBlockList)
-ROUTE.post('/upload-profile-image/:id',authorize(roles.User),upload.single('image'),userController.uploadProfileImage)
+// ROUTE.post('/upload-profile-image/:id',authorize(roles.User),upload.single('image'),userController.uploadProfileImage)
 // ROUTE.get('/get-profile-image/:id',authorize(roles.User),userController.getprofileImage)
 ROUTE.delete('/delete-message/:id',authorize(roles.User),chatController.deleteMessage)
 ROUTE.put('/update-message/:id',authorize(roles.User),chatController.updateMessage);
@@ -30,8 +30,10 @@ ROUTE.post('/create-group',roomController.createGroup);
 ROUTE.post('/add-user-group',roomController.addUserToGroup);
 ROUTE.post('/remove-user-group',roomController.removeUserFromGroup);
 
-ROUTE.get('/get-all-chat-list',chatController.getAllChatList);
+ROUTE.get('/get-all-chat-list',authorize(roles.User),chatController.getAllChatList);
 ROUTE.get('/get-group-list',authorize(roles.User),chatController.getAllGroupList);
+ROUTE.put('/update-group-message',authorize(roles.User),chatController.updateGroupMessage);
+ROUTE.post('/get-group-chat',authorize(roles.User),chatController.getGroupChat)
 
 /***********---------Payments Method ----------***********/
 ROUTE.post('/create-card-token',paymentController.createCardToken);
@@ -45,8 +47,10 @@ ROUTE.post('/update-card',paymentController.updateCard)
 
 
 /*******for checking purpose  */
-ROUTE.post('/test',roomController.test4);
+ROUTE.post('/test',roomController.test6);
 module.exports = ROUTE
+
+
 
 
 

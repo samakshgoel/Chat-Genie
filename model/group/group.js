@@ -28,6 +28,7 @@ let groupChat = new mongoose.Schema(
     createdAt : {type:Date,default:Date.now},
     deletedAt: { type: Date },
     ProfileImage : {type:String,default:null},
+    ProfileImageUpdatedBy : {type : String,default:null},
     Group_Creater_Id : {type:String}
   });
 const model = mongoose.model('group',groupChat);
