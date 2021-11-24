@@ -473,6 +473,7 @@ exports = module.exports = function(io){
 
     socket.on('exchangeSDP',(data,id)=>{
       console.log('exchangeSDP response hererererererre::::',data,"  ",id )
+      console.log('exchangeSDP response hererererererre::::',data,"  ",id )
       io.to(id).emit('exchangeSDP',data);
     })  
   });
