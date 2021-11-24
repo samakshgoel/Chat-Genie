@@ -431,10 +431,52 @@ exports = module.exports = function(io){
       }).catch(err=>{console.log("err3",err)})
     })
 
+/********* video calling and audio calling **********/
+
+    // socket.on('ToCallAPerson',data=>{
+    //   console.log("data in ToCallAPerson",data)
+    //   data.users.forEach(ele=>{
+    //     let index = onlineUserList.indexOf(ele);
+    //     if(index){
+    //       io.to(data.CallerId).emit('ToCallAPersonResponse',data)
+    //     }else{
+    //       io.to(data.CallerId).emit('ToCallAPersonResponse',[])
+    //     }
+    //   })
+    // })
+
+
+
+    socket.on('tocallaperson',data=>{
+      console.log("is it entering")
+      console.log("data in ToCallAPerson",data)
+      let index
+      data.users.forEach(ele=>{
+        index = onlineUserList.indexOf(ele.UserId);
+      })
+      console.log("index:::",index)
+      if(index>=0){
+        io.to(data.CallerId).to(data.users[0].UserId).emit('ToCallAPersonResponse',data)
+        console.log("emit")
+      }else{
+        data.users=[]
+        io.to(data.CallerId).emit('ToCallAPersonResponse',data)
+      }
+    })
+
+
+    // socket.on('afterCreateOffer',data=>{
+    //   console.log("data in afterCreateOffer:",data)
+    //   io.to(data.friendId).emit('afterCreateOfferResponse',data);
+    // })
+
+
+    socket.on('exchangeSDP',(data,id)=>{
+      console.log('exchangeSDP response hererererererre::::',data,"  ",id )
+      io.to(id).emit('exchangeSDP',data);
+    })  
   });
 
-
-/********* video calling and audio calling **********/
 
 
 }
