@@ -19,8 +19,6 @@ ROUTE.post('/block/:roomId',authorize(roles.User),roomController.blockUser)
 ROUTE.post('/save-chat/:room_Id',authorize(roles.User), chatController.saveChat)
 ROUTE.get('/get-chat/:room_Id/:FriendId',authorize(roles.User),chatController.getChat)
 ROUTE.get('/get-block-list',authorize(roles.User),roomController.getBlockList)
-// ROUTE.post('/upload-profile-image/:id',authorize(roles.User),upload.single('image'),userController.uploadProfileImage)
-// ROUTE.get('/get-profile-image/:id',authorize(roles.User),userController.getprofileImage)
 ROUTE.delete('/delete-message/:id',authorize(roles.User),chatController.deleteMessage)
 ROUTE.put('/update-message/:id',authorize(roles.User),chatController.updateMessage);
 ROUTE.put('/update-self-details',authorize(roles.User),userController.updateSelfDetails);

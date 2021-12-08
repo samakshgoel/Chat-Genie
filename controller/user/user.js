@@ -77,7 +77,6 @@ module.exports = {
         
         
             try{
-        
                 let UserData = await queryModule.getUser({Email:Email});
                 if(!UserData) return res.status(422).send({ code:422, status: 'Sign Up First' })
                 

@@ -9,6 +9,7 @@ const { ObjectId } = require('bson');
 exports = module.exports = function(io){
 
   let onlineUserList = [];
+  let callAccepted = [];
 
      /* sockets method */
  io.on('connection', socket => {
@@ -465,6 +466,14 @@ exports = module.exports = function(io){
     })
 
 
+    socket.on('toCallInGroup',data=>{
+      console.log("data in call in group::::",data);
+      data.users.map(ele=>{
+        io.to(ele).emit('toCallInGroupOn',{GroupId : data.GroupId,CallerId:data.CallerId,typeCall:data.typeCall })
+      })
+    })
+
+
     // socket.on('afterCreateOffer',data=>{
     //   console.log("data in afterCreateOffer:",data)
     //   io.to(data.friendId).emit('afterCreateOfferResponse',data);
@@ -472,13 +481,70 @@ exports = module.exports = function(io){
 
 
     socket.on('exchangeSDP',(data,id)=>{
-      console.log('exchangeSDP response hererererererre::::',data,"  ",id )
-      console.log('exchangeSDP response hererererererre::::',data,"  ",id )
+      console.log('exchangeSDP response hererererererre::::',data," idddddd ",id )
+      // console.log('exchangeSDP response hererererererre::::',data,"  ",id )
       io.to(id).emit('exchangeSDP',data);
     })  
+
+    socket.on('exchangeSDPG',(data,to_id,from_id)=>{
+      let main_data = {
+        data:data,
+        to_id:to_id,
+        from_id:from_id
+      }
+      
+      // console.log('exchangeSDP response exchangeSDPG::::',data," to_id ",to_id ,"from_id",from_id )
+      io.to(to_id).emit('exchangeSDPG',main_data);
+    })
+
+
+    socket.on('CallAccepted',UserId=>{
+
+      console.log("callAccepted :", callAccepted, "User ID is ", UserId)
+      console.log("online user list:::",onlineUserList);
+
+      io.to(UserId).emit('toInformAboutOldUsers',callAccepted);
+      callAccepted.forEach(ele=>{
+        if( ele != UserId){
+          console.log("ele is here111111",ele)
+          io.to(ele).emit('toInformAboutNewUser',UserId);
+          console.log("ele is here",ele)
+        }
+        
+      })
+      
+      let flag = true
+      callAccepted.forEach(ele=>{
+        if(ele == UserId){
+          flag = false
+        }
+      })
+      if(flag){
+        callAccepted.push(UserId)
+      }
+      console.log("callAccepted",callAccepted);
+    })
+
+
+
+    socket.on('callRejectedInGroup',id=>{
+      console.log("callRejectedInGroup socket ", id )
+      let index = callAccepted.indexOf(id);
+      if (index !== -1) {
+        callAccepted.splice(index, 1);
+      }
+      callAccepted.forEach(ele=>{
+        io.to(ele).emit('callRejectedInGroupOn',id);
+      })
+      if(callAccepted.length == 1){
+        callAccepted.pop();
+      }
+      console.log("callRejectedInGroup callAccepted array is ", callAccepted);
+    })
+
+
   });
 
 
 
 }
-

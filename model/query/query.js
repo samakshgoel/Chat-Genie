@@ -223,9 +223,8 @@ queryModule.getBlockList = async function(data){
                 Sender_Id:1,
                 Response_Time:1,
                 Created_At:1,
-                Name:{
-                    $concat:['$To_user_details.First_Name'," ", "$To_user_details.Last_Name"]
-                },
+                First_Name:'$To_user_details.First_Name',
+                Last_Name : "$To_user_details.Last_Name",
                 Status :1
                 
             }
@@ -473,15 +472,15 @@ queryModule.getGroupDetails = async function(id){
 queryModule.getGroupList = async function(data){
     console.log("data in query folder ",data)
     return  await groupModel.aggregate([
-        // {
-        //     $match:{$and:[
-        //         {'Users.User_Id' :data },
-        //         {'Users.Is_Remove':{$ne:true}}
-        //     ]}
-        // },
         {
-        $match:{'Users.User_Id' :data }
+            $match:{$and:[
+                {'Users.User_Id' :data },
+                {'Users.Is_Remove':{$ne:true}}
+            ]}
         },
+        // {
+        // $match:{'Users.User_Id' :data }
+        // },
         {
             $unwind: '$Users'
         },
