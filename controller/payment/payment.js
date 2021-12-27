@@ -19,7 +19,6 @@ module.exports = {
         if(!email) return res.status(422).send({ code:422, status: 'Failed', msg : "Email not found" });
         try{
             const customer = await paymentQuery.createCustomer(email)
-            console.log("customer kaha hai ",customer)
             let updateData = await queryModule.saveCustomerId(email,customer.id)
             console.log("Update Data ::",updateData);
             return res.status(200).send({ code:200, status: 'Failed', data:customer});
@@ -34,8 +33,7 @@ module.exports = {
         description = req.body.description
         if(!id || !description) return res.status(422).send({ code:422, status: 'Failed', msg : "Data wasn't found" });
         try{
-            const customer = await paymentQuery.updateCustomer(id,description)
-            console.log("customer kaha hai ",customer)
+            const customer = await paymentQuery.updateCustomer(id,description
             return res.status(200).send({ code:200, status: 'Failed', data:customer});
         }catch(err){
             console.log("error is ::",err)
@@ -47,7 +45,6 @@ module.exports = {
        limit = req.body.limit;
        try{
            const list = await paymentQuery.listOfAllCustomers(limit);
-            console.log("customer kaha hai ",list)
             return res.send(list);
        }catch(err){
         return res.status(422).send({ code:422, status: 'Failed', msg : err.message });
@@ -60,7 +57,6 @@ module.exports = {
 
         try{
             let createCard = await paymentQuery.createCard(id,token);
-            console.log("Card is created now , ",createCard)
             return res.status(200).send({code:200,status:"success",data:createCard});
 
         }catch(err){
@@ -73,7 +69,6 @@ module.exports = {
         let limit = req.body.limit;
         try{
             let cards = await paymentQuery.listOfAllCards(limit);
-            console.log("Card is created now , ",cards)
             return res.status(200).send({code:200,status:"success",data:cards});
         }catch(err){
             console.log(err)
